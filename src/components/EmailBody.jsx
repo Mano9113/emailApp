@@ -30,7 +30,7 @@ const Controller = () => {
     Axios.get(`https://flipkart-email-mock.now.sh/?id=${id}`)
       .then(response => {
         const updatedList = list.map(email =>
-          email.id === id ? { ...email, isRead: true } : email // Mark email as read
+          email.id === id ? { ...email, isRead: true } : email 
         );
         setList(updatedList);
         setFilteredList(updatedList);
