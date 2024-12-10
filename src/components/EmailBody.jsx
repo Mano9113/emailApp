@@ -4,13 +4,12 @@ import Filters from './Filters';
 // import './style.css'; // Add CSS file for styling
 
 const Controller = () => {
-  const [list, setList] = useState([]); 
-  const [details, setDetails] = useState(null); 
-  const [selected, setSelected] = useState(null);  
+  const [list, setList] = useState([]);
+  const [details, setDetails] = useState(null);
+  const [selected, setSelected] = useState(null);
   const [filteredList, setFilteredList] = useState([]);
 
   useEffect(() => {
-    
     // Fetch the email list on component mount
     Axios.get('https://flipkart-email-mock.now.sh/')
       .then((response) => {
@@ -30,13 +29,13 @@ const Controller = () => {
     Axios.get(`https://flipkart-email-mock.now.sh/?id=${id}`)
       .then(response => {
         const updatedList = list.map(email =>
-          email.id === id ? { ...email, isRead: true } : email 
+          email.id === id ? { ...email, isRead: true } : email // Mark email as read
         );
         setList(updatedList);
         setFilteredList(updatedList);
         const selectedEmail = updatedList.find(email => email.id === id);
-        setSelected(selectedEmail);  
-        setDetails(response.data);  
+        setSelected(selectedEmail);
+        setDetails(response.data);
       })
       .catch(error => console.error('Error fetching email details:', error));
   };
@@ -82,7 +81,7 @@ const Controller = () => {
                   <p><strong>Subject:</strong> {email.subject}</p>
                   <p>{email.short_description}</p>
                   <p>{new Date(email.date).toLocaleString()}</p>
-                  {email.isRead && <span className="badge bg-primary">Read</span>}
+                  {email.isRead && <span className="badge bg-primary me-2">Read</span>}
                   {email.isFavorite && <span className="badge bg-warning">Favorite</span>}
                 </div>
               </div>
@@ -97,9 +96,19 @@ const Controller = () => {
                   {selected.from.email.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <div className="details-header">
-                    <h5>{selected.subject}</h5>
-                    <p>{new Date(selected.date).toLocaleString()}</p>
+                  <div className="details-header d-flex justify-content-between align-items-baseline">
+                    <div>
+                      <h5>{selected.subject}</h5>
+                      <p>{new Date(selected.date).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <button
+                        className={`mark-favorite btn btn-sm ${selected.isFavorite ? 'btn-warning' : 'btn-secondary'}`}
+                        onClick={() => toggleFavorite(selected.id)}
+                      >
+                        {selected.isFavorite ? 'Unmark Favorite' : 'Mark as Favorite'}
+                      </button>
+                    </div>
                   </div>
                   {details ? (
                     <div
@@ -109,12 +118,6 @@ const Controller = () => {
                   ) : (
                     <p>Loading email details...</p>
                   )}
-                  <button
-                    className={`mark-favorite btn ${selected.isFavorite ? 'btn-warning' : 'btn-secondary'}`}
-                    onClick={() => toggleFavorite(selected.id)}
-                  >
-                    {selected.isFavorite ? 'Unmark Favorite' : 'Mark as Favorite'}
-                  </button>
                 </div>
               </>
             ) : (
