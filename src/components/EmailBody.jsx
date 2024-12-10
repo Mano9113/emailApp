@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Axios from 'axios';
 import Filters from './Filters';
-// import './style.css'; // Add CSS file for styling
 
 const Controller = () => {
-  const [list, setList] = useState([]);
-  const [details, setDetails] = useState(null);
-  const [selected, setSelected] = useState(null);
+  const [list, setList] = useState([]); 
+  const [details, setDetails] = useState(null); 
+  const [selected, setSelected] = useState(null);  
   const [filteredList, setFilteredList] = useState([]);
+  const [activeFilter, setActiveFilter] = useState('All'); // Track the active filter
 
   useEffect(() => {
     // Fetch the email list on component mount
@@ -19,7 +19,7 @@ const Controller = () => {
           isFavorite: false,
         }));
         setList(updateList);
-        setFilteredList(updateList);
+        setFilteredList(updateList); // Default to all emails
       })
       .catch(error => console.error('Error fetching email list:', error));
   }, []);
@@ -32,24 +32,27 @@ const Controller = () => {
           email.id === id ? { ...email, isRead: true } : email // Mark email as read
         );
         setList(updatedList);
-        setFilteredList(updatedList);
-        const selectedEmail = updatedList.find(email => email.id === id);
-        setSelected(selectedEmail);
+        setFilteredList(
+          updatedList.filter((email) => filterEmail(email, activeFilter)) // Reapply filter
+        );
+        setSelected(id); // Track the selected email ID
         setDetails(response.data);
       })
       .catch(error => console.error('Error fetching email details:', error));
   };
 
   const handleFilterChange = (filter) => {
-    if (filter === 'All') {
-      setFilteredList(list);
-    } else if (filter === 'Read') {
-      setFilteredList(list.filter(email => email.isRead));
-    } else if (filter === 'Unread') {
-      setFilteredList(list.filter(email => !email.isRead));
-    } else if (filter === 'Favourite') {
-      setFilteredList(list.filter(email => email.isFavorite));
-    }
+    setActiveFilter(filter); // Update active filter
+    setFilteredList(list.filter((email) => filterEmail(email, filter)));
+  };
+
+  // Helper function to apply filter conditions
+  const filterEmail = (email, filter) => {
+    if (filter === 'All') return true;
+    if (filter === 'Read') return email.isRead;
+    if (filter === 'Unread') return !email.isRead;
+    if (filter === 'Favourite') return email.isFavorite;
+    return false;
   };
 
   const toggleFavorite = (id) => {
@@ -57,73 +60,76 @@ const Controller = () => {
       email.id === id ? { ...email, isFavorite: !email.isFavorite } : email
     );
     setList(updatedList);
-    setFilteredList(updatedList);
+    setFilteredList(
+      updatedList.filter((email) => filterEmail(email, activeFilter)) // Reapply filter
+    );
   };
 
   return (
     <>
-      <Filters onFilterChange={handleFilterChange} />
-      <div className="m-3">
-        <div className="row">
-          {/* Email List */}
-          <div className="col-6 email-list">
-            {filteredList.map(email => (
-              <div
-                className={`email-box d-flex ${selected === email.id ? 'selected' : ''}`}
-                key={email.id}
-                onClick={() => fetchDetails(email.id)}
-              >
-                <div className="email-initial">
-                  {email.from.email.charAt(0).toUpperCase()}
-                </div>
-                <div className="email-info">
-                  <p><strong>From:</strong> {email.from.email}</p>
-                  <p><strong>Subject:</strong> {email.subject}</p>
-                  <p>{email.short_description}</p>
-                  <p>{new Date(email.date).toLocaleString()}</p>
-                  {email.isRead && <span className="badge bg-primary me-2">Read</span>}
-                  {email.isFavorite && <span className="badge bg-warning">Favorite</span>}
-                </div>
+      <Filters activeFilter={activeFilter} onFilterChange={handleFilterChange} />
+      <div className="row">
+        {/* Email List */}
+        <div className="col-6 email-list">
+          {filteredList.map(email => (
+            <div
+              className={`email-box d-flex ${selected === email.id ? 'selected' : ''}`}
+              key={email.id}
+              onClick={() => fetchDetails(email.id)}
+            >
+              <div className="email-initial">
+                {email.from.email.charAt(0).toUpperCase()}
               </div>
-            ))}
-          </div>
+              <div className="email-info">
+                <p><strong>From:</strong> {email.from.email}</p>
+                <p><strong>Subject:</strong> {email.subject}</p>
+                <p>{email.short_description}</p>
+                <p>{new Date(email.date).toLocaleString()}</p>
+                {email.isRead && <span className="badge bg-primary me-2">Read</span>}
+                {email.isFavorite && <span className="badge bg-warning">Favorite</span>}
+              </div>
+            </div>
+          ))}
+        </div>
 
-          {/* Email Details */}
-          <div className="col-6 email-details d-flex">
-            {selected ? (
-              <>
-                <div className="email-initial" style={{ width: '18rem' }}>
-                  {selected.from.email.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <div className="details-header d-flex justify-content-between align-items-baseline">
-                    <div>
-                      <h5>{selected.subject}</h5>
-                      <p>{new Date(selected.date).toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <button
-                        className={`mark-favorite btn btn-sm ${selected.isFavorite ? 'btn-warning' : 'btn-secondary'}`}
-                        onClick={() => toggleFavorite(selected.id)}
-                      >
-                        {selected.isFavorite ? 'Unmark Favorite' : 'Mark as Favorite'}
-                      </button>
-                    </div>
+        {/* Email Details */}
+        <div className="col-6 email-details">
+          {selected ? (
+            <>
+              <div className="email-initial">
+                {list.find(email => email.id === selected).from.email.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div className="details-header d-flex justify-content-between align-items-baseline">
+                  <div>
+                  <h5>{list.find(email => email.id === selected).subject}</h5>
+                  <p>{new Date(list.find(email => email.id === selected).date).toLocaleString()}</p>
                   </div>
-                  {details ? (
-                    <div
-                      className="details-body"
-                      dangerouslySetInnerHTML={{ __html: details.body }}
-                    />
-                  ) : (
-                    <p>Loading email details...</p>
-                  )}
+                  <div>
+
+                  <button
+                  className={`mark-favorite btn btn-sm ${list.find(email => email.id === selected).isFavorite ? 'btn-warning' : 'btn-secondary'}`}
+                  onClick={() => toggleFavorite(selected)}
+                >
+                  {list.find(email => email.id === selected).isFavorite ? 'Unmark Favorite' : 'Mark as Favorite'}
+                </button>
                 </div>
-              </>
-            ) : (
-              <p className="no-selection">Select an email to view details</p>
-            )}
-          </div>
+
+                </div>
+                {details ? (
+                  <div
+                    className="details-body"
+                    dangerouslySetInnerHTML={{ __html: details.body }}
+                  />
+                ) : (
+                  <p>Loading email details...</p>
+                )}
+
+              </div>
+            </>
+          ) : (
+            <p className="no-selection">Select an email to view details</p>
+          )}
         </div>
       </div>
     </>
